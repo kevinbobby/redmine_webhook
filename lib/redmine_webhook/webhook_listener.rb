@@ -1,6 +1,5 @@
 module RedmineWebhook
   class WebhookListener < Redmine::Hook::Listener
-
     def controller_issues_new_after_save(context = {})
       issue = context[:issue]
       controller = context[:controller]
@@ -44,12 +43,13 @@ module RedmineWebhook
 
     def post(webhook, request_body)
       Thread.start do
-        begin
-          Faraday.post do |req|
-            req.url webhook.url
-            req.headers['Content-Type'] = 'application/json'
-            req.body = request_body
-          end
+        begin    	  	
+        	url = URI.parse(webhook.url)
+          Net::HTTP.start(url.host, url.port) do |http|
+            req = Net::HTTP::Post.new(url.path,{'Content-Type' => 'application/json;charset=UTF-8','Content-Encoding' => 'UTF-8'})
+            req.body=request_body
+						puts http.request(req).body
+          end    	  	
         rescue => e
           Rails.logger.error e
         end
